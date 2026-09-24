@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WhatsApp Real-Time Chat | Python Asyncio & WebSockets</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- App Background Accent Bar (WhatsApp signature top bar) -->
+  <div class="top-accent-bar"></div>
+
+  <div class="app-container">
+    
+    <!-- LEFT SIDEBAR: Rooms & User Profile -->
+    <aside class="sidebar">
+      
+      <!-- User Profile Header -->
+      <div class="sidebar-header">
+        <div class="my-profile">
+          <div class="avatar-badge" id="myAvatarDisplay">🧑‍💻</div>
+          <div class="user-meta">
+            <span class="my-name" id="myNameDisplay">Guest</span>
+            <span class="online-indicator"><span class="pulse-dot"></span> Online</span>
+          </div>
+        </div>
+        <div class="sidebar-actions">
+          <button id="btnNewRoom" class="icon-btn" title="Create or Join Custom Room">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+            </svg>
+          </button>
+          <button id="themeToggleBtn" class="icon-btn" title="Toggle Theme">
+            🌓
+          </button>
+        </div>
+      </div>
+
+      <!-- Search / Filter Rooms Bar -->
+      <div class="search-section">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="search-icon">
+            <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </svg>
+          <input type="text" id="roomSearchInput" placeholder="Search or start new chat room..." />
+        </div>
+      </div>
+
+      <!-- Rooms / Channels List -->
+      <div class="room-list-header">
+        <span>CHANNELS & ROOMS</span>
+        <span class="live-pill">LIVE SYNC</span>
+      </div>
+      <div class="rooms-container" id="roomsList">
+        <!-- Dynamic Room Cards rendered by JS -->
+      </div>
+
+    </aside>
+
+    <!-- RIGHT MAIN CHAT AREA -->
+    <main class="chat-area">
+      
+      <!-- Chat Header -->
+      <header class="chat-header">
+        <div class="room-info-box">
+          <div class="room-avatar" id="currentRoomAvatar">#</div>
+          <div class="room-details">
+            <div class="room-title-row">
+              <h2 id="currentRoomName">General Lounge</h2>
+              <span class="badge" id="activeCountBadge">1 online</span>
+            </div>
+            <div class="room-status-subtitle" id="typingSubtitle">
+              <span id="roomDesc">Casual chats & greetings</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-header-actions">
+          <button id="btnToggleMembers" class="header-btn" title="View Active Members">
+            👥 <span id="membersBtnText">Members (1)</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Chat Messages Container -->
+      <div class="messages-container" id="messagesContainer">
+        <div class="chat-date-separator">
+          <span>TODAY</span>
+        </div>
+        <!-- Messages rendered by JS -->
+      </div>
+
+      <!-- Message Input Bar (WhatsApp style) -->
+      <footer class="chat-footer">
+        <div class="input-actions-left">
+          <div class="emoji-dropdown-container">
+            <button id="btnEmojiToggle" class="icon-btn" title="Quick Emojis">😊</button>
+            <div class="emoji-picker hidden" id="emojiPicker">
+              <span>👍</span><span>❤️</span><span>🔥</span><span>🚀</span>
+              <span>🎉</span><span>😂</span><span>🐍</span><span>⚡</span>
+              <span>💻</span><span>💡</span><span>☕</span><span>🙌</span>
+            </div>
+          </div>
+        </div>
+
+        <form id="chatForm" class="chat-form">
+          <input 
+            type="text" 
+            id="messageInput" 
+            placeholder="Type a message... (Press Enter to send)" 
+            autocomplete="off" 
+            maxlength="1000"
+          />
+          <button type="submit" id="sendBtn" class="send-btn" title="Send">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+              <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+          </button>
+        </form>
+      </footer>
+
+    </main>
+
+    <!-- RIGHT SIDE PANEL: Room Members Drawer -->
+    <div class="members-drawer hidden" id="membersDrawer">
+      <div class="drawer-header">
+        <h3>Room Participants</h3>
+        <button id="btnCloseDrawer" class="icon-btn">✕</button>
+      </div>
+      <div class="drawer-content" id="membersList">
+        <!-- Members list rendered by JS -->
+      </div>
+      <div class="drawer-footer">
+        <small>⚡ Real-time updates via Asyncio</small>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JOIN / LOGIN MODAL (On initial load) -->
+  <div class="modal-overlay" id="loginModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="logo-icon">💬</div>
+        <h2>Welcome to AsyncChat</h2>
+        <p>Built with <strong>Python 3 Asyncio + FastAPI WebSockets</strong></p>
+      </div>
+
+      <form id="loginForm" class="login-form">
+        <label for="usernameInput">Choose your Nickname</label>
+        <div class="input-group">
+          <input 
+            type="text" 
+            id="usernameInput" 
+            placeholder="e.g. Alex, CyberDev, Ninja" 
+            required 
+            maxlength="20"
+            autofocus
+          />
+        </div>
+
+        <label>Pick your Avatar</label>
+        <div class="avatar-grid" id="avatarPickerGrid">
+          <button type="button" class="avatar-option selected" data-avatar="🧑‍💻">🧑‍💻</button>
+          <button type="button" class="avatar-option" data-avatar="🚀">🚀</button>
+          <button type="button" class="avatar-option" data-avatar="🐍">🐍</button>
+          <button type="button" class="avatar-option" data-avatar="🦊">🦊</button>
+          <button type="button" class="avatar-option" data-avatar="⚡">⚡</button>
+          <button type="button" class="avatar-option" data-avatar="🐼">🐼</button>
+          <button type="button" class="avatar-option" data-avatar="☕">☕</button>
+          <button type="button" class="avatar-option" data-avatar="🐱">🐱</button>
+        </div>
+
+        <button type="submit" class="btn-primary">
+          Enter Chat Room 🚀
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- CUSTOM ROOM MODAL -->
+  <div class="modal-overlay hidden" id="newRoomModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="logo-icon">➕</div>
+        <h2>Create or Join Custom Room</h2>
+        <p>Create a dedicated topic channel in real-time</p>
+      </div>
+
+      <form id="newRoomForm" class="login-form">
+        <label for="customRoomId">Room ID / Slug</label>
+        <div class="input-group">
+          <input 
+            type="text" 
+            id="customRoomId" 
+            placeholder="e.g. backend-crew, gaming" 
+            required 
+            maxlength="25"
+          />
+        </div>
+        <div class="modal-buttons">
+          <button type="button" id="btnCancelRoom" class="btn-secondary">Cancel</button>
+          <button type="submit" class="btn-primary">Join Room</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

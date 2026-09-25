@@ -81,7 +81,7 @@ Open `http://localhost:8000` in two different browser tabs (or an Incognito wind
 ## 📂 Project Structure
 
 ```
-Python-Websockets/
+fastapi-websockets-chat/
 ├── main.py              # FastAPI app, static mounts, and WebSocket router
 ├── manager.py           # ConnectionManager for state, presence, and broadcasts
 ├── static/
